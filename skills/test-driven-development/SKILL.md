@@ -108,7 +108,7 @@ Vague name, tests mock not code
 **Requirements:**
 - One behavior
 - Clear name
-- Real code (no mocks unless unavoidable)
+- Real code — mock only at a process, network or storage boundary, or a clock or randomness
 
 ### Verify RED - Watch It Fail
 
@@ -174,8 +174,7 @@ npm test path/to/test.test.ts
 ```
 
 Confirm:
-- Test passes
-- Other tests still pass
+- The `task` scope passes
 - Output pristine (no errors, warnings)
 
 **Test fails?** Fix code, not test.
@@ -208,6 +207,18 @@ When writing or changing any test, read [writing-good-tests.md](writing-good-tes
 - Assert on real behavior, never on mock behavior
 - Keep test-only code in test utilities, out of production classes
 - Understand a dependency's side effects before mocking it
+
+## Test Scope
+
+`VOCABULARY.md`, **test scope**:
+
+- While working, `task`: the tests the task names, nothing else.
+- Before the commit, one `affected` pass, plus the task's integration test.
+- The full suite is not a condition for finishing a task: it proves the end
+  of the need — at CI on push, or by the verifier at phase 6 when there is
+  no CI.
+- Off plan (Fast-Path): one test per behaviour the request names, `affected`
+  before the commit, `full` at CI.
 
 ## Common Rationalizations
 
@@ -284,14 +295,14 @@ Extract validation for multiple fields if needed.
 
 Before marking work complete:
 
-- [ ] Every new function/method has a test
+- [ ] Every behaviour the task names has a test, and no test exists for a behaviour it does not name
 - [ ] Watched each test fail before implementing
 - [ ] Each test failed for expected reason (feature missing, not typo)
 - [ ] Wrote minimal code to pass each test
-- [ ] All tests pass
+- [ ] The `task` and `affected` scopes pass
 - [ ] Output pristine (no errors, warnings)
-- [ ] Tests use real code (mocks only if unavoidable)
-- [ ] Edge cases and errors covered
+- [ ] Mocks only at a process, network or storage boundary, or for a clock or randomness — a mocked internal collaborator is a non-blocking finding
+- [ ] Edge cases and errors covered where the spec names them
 
 Can't check all boxes? You skipped TDD. Start over.
 

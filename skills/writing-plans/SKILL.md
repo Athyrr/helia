@@ -101,7 +101,7 @@ independently testable deliverable.
 - "Write the failing test" - step
 - "Run it to make sure it fails" - step
 - "Implement the minimal code to make the test pass" - step
-- "Run the tests and make sure they pass" - step
+- "Run the `task` scope, then one `affected` pass" - step
 - "Commit" - step
 
 ## Plan Document Header
@@ -124,6 +124,10 @@ argues from the spec, so the spec travels with it; executors read both. When
 the project has a domain expert, the spec's own `## Impact` section (phase
 2.5) names the files and traps the expert saw; a Files block that contradicts
 it is wrong until argued otherwise.]
+
+**Test scope affected:** [the `affected` command for the whole plan — the
+registry's `Tests affectés` line, or else the project's unit-test command,
+never its whole suite. A task restates it only to replace it.]
 
 ## Global Constraints
 
@@ -184,6 +188,13 @@ Explanations go in prose **below** the block.
   and return types. A task's implementer sees only their own task; this
   block is how they learn the names and types neighboring tasks use.]
 
+**Test scope:**
+- Behaviours:
+  1. [one behaviour, one test — the list's length is the number of tests]
+- task: `pytest tests/path/test.py -v`
+- integration: [the one integration test, when the task crosses a process,
+  network or storage boundary] | `none`
+
 - [ ] **Step 1: Write the failing test**
 
 ```python
@@ -204,9 +215,12 @@ def function(input):
     return expected
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [ ] **Step 4: Run the `task` scope, then one `affected` pass**
 
-Run: `pytest tests/path/test.py::test_name -v`
+Run: `pytest tests/path/test.py -v`
+Expected: PASS
+Run: the plan header's `Test scope affected:` command, plus the task's
+`integration:` test if it names one — never the whole suite
 Expected: PASS
 
 - [ ] **Step 5: Commit**
@@ -216,6 +230,20 @@ git add tests/path/test.py src/path/file.py
 git commit -m "feat: add specific feature"
 ```
 ````
+
+## Test Scope
+
+`**Test scope:**` is titled apart from `**Files:**` on purpose: `plan-drift`
+reads only the Files block, and its `Test:` line stays there.
+
+- **Behaviours** — numbered; the count is the number of tests the task
+  writes. Edge cases only when the spec names them. A test no plausible
+  defect would make fail is not written; an existing test that already covers
+  a behaviour is cited, not duplicated.
+- **The cycle** — red and green on `task`, one `affected` pass (plus
+  `integration`), commit.
+- **`full` is never a step**, not even of the last task: CI runs it on push,
+  or the verifier at phase 6 when there is no CI.
 
 ## Human Tasks
 
