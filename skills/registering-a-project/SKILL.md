@@ -75,6 +75,15 @@ there is no automated suite, say so, give the gates that do exist, and state
 what verdict is honest: `GATES_PASS — human verification required`, never
 `PASS`.
 
+Two optional lines give the `affected` and `full` test scopes
+(`VOCABULARY.md`, **test scope**). Without them the file is still valid, and
+the planner picks the unit-test command — never the project's whole suite.
+
+- `Tests affectés : <command>` — the project's fast tests (a filter, a marker
+  or a directory), integration excluded.
+- `CI : <what it runs, and when>`, or `CI : aucune` — then `full` falls to the
+  verifier at phase 6.
+
 **6. Traps** — what silently breaks work here. A trap earns its place if
 someone competent would get it wrong without being told.
 
