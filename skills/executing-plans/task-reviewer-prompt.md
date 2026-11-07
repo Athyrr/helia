@@ -72,17 +72,17 @@ Subagent (helia:reviewer):
 
     ## Tests
 
-    The `TEST:` line names the command the implementer ran and its result.
-    Do not re-run the suite to confirm it. Run a test only when reading the
-    code raises a specific doubt that no existing run answers — and then a
-    focused test, never a package-wide suite, race detector run, or
-    repeated/high-count loop. If heavy validation seems warranted, recommend
-    it in your report instead of running it. If you cannot run commands in
-    this environment, name the test you would run.
+    The `TEST:` line names the scope the implementer ran, its command and
+    its result. Do not re-run it. Read the code; measure — a probe, a
+    container, a test run, each one measurement — only when a risk you can
+    name cannot be settled by reading, and only once. Never a package-wide
+    suite, race detector run, or repeated/high-count loop: if heavy
+    validation seems warranted, recommend it instead. If you cannot run
+    commands in this environment, name the test you would run.
 
-    A `TEST:` line that names a command but no clear pass/result, or that
-    only ran a subset of what the diff touches, is itself a finding — the
-    claim doesn't carry what it needs to.
+    A `TEST:` line that names a command but no clear result, or whose
+    `affected` scope does not cover what the diff touches, is itself a
+    finding.
 
     ## Empirical Claims
 
@@ -123,8 +123,12 @@ Subagent (helia:reviewer):
     - Edge cases handled?
 
     **Tests:**
-    - Do the new and changed tests verify real behavior, not mocks?
-    - Are the task's edge cases covered?
+    - Does each behaviour in Task N's `Behaviours` list have one test that
+      verifies real behavior? A test outside that list, or duplicating an
+      existing test, is a finding.
+    - A mock of an internal collaborator — not a process, network or
+      storage boundary, nor a clock or randomness — is a non-blocking
+      finding.
 
     **Structure:**
     - Does each file have one clear responsibility with a well-defined interface?

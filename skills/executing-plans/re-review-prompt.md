@@ -66,11 +66,13 @@ Subagent (helia:reviewer):
 
     ## Tests
 
-    The `TEST:` line names the command the implementer re-ran and its
+    The `TEST:` line names the scope the implementer re-ran and its
     result. Treat it as an unverified claim: verify it against the diff. Do
-    not re-run the suite to confirm it. Run a test only when reading the
-    code raises a specific doubt that no existing run answers — and then a
-    focused test, never a package-wide suite.
+    not re-run it, and take no new measurement — probe, container or test
+    run — unless the fix touches precisely what the previous review
+    measured; then repeat that measurement only.
+
+    Measured by the previous review: [MEASURED]
 
     ## Empirical Claims
 
@@ -116,6 +118,8 @@ Subagent (helia:reviewer):
   attempt. Without a row, the reviewer runs at its frontmatter values.
 - `[FINDINGS]` — the `REJECT`-level findings from the previous review,
   copied verbatim, one per bullet
+- `[MEASURED]` — each measurement the previous review reported (its risk and
+  command), copied verbatim, or `nothing`
 - `[FIX_BASE_SHA]` — the head the previous review saw
 - `[HEAD_SHA]` — current commit
 - `[DIFF_FILE]` — the diff over that range, captured directly

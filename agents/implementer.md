@@ -46,7 +46,7 @@ lines and nothing else — no diff, no log, no narrative:
 ```
 STATUS: SUCCESS | SUCCESS (concern: <one clause>) | FAILURE: <one-sentence reason>
 FILES: <created/modified paths, comma-separated>
-TEST: <command run> — <result, e.g. "4 passed">
+TEST: <scope> <command> — <result, e.g. "affected npm run test:unit — 41 passed">
 ```
 
 Use `SUCCESS (concern: ...)` only for a real doubt about correctness or

@@ -23,8 +23,9 @@ Subagent (helia:implementer):
     [Create/Modify/Test paths, copied from Task N's Files block — nothing
     else]
 
-    ## Test command
-    [the exact command that proves this task]
+    ## Test scope
+    [Task N's `task:` and `integration:` lines, and the `affected` command —
+    the plan header's, unless Task N replaces it]
 
     ## Constraint
     [at most one line, only if a Global Constraint or a project heuristic
@@ -50,16 +51,16 @@ Subagent (helia:implementer):
     ## Your Job
 
     1. Implement exactly what Task N specifies
-    2. Write tests (following TDD if the task says to)
-    3. Run the test command above and confirm it passes
+    2. Write the tests Task N's `Behaviours` list names, and no other — a
+       test that seems deserved goes in a concern, not in the code
+    3. While working, run `task`; before committing, one `affected` pass
+       (plus `integration`), with a fail-fast flag if the runner has one.
+       Never `full`: CI or the verifier runs it
     4. Commit your work
     5. Self-review: completeness, quality, discipline (YAGNI), test hygiene
     6. Report back — see Report Format below
 
     Work from: [directory]
-
-    While iterating, run the focused test for what you're changing; run the
-    full test command once before committing, not after every edit.
 
     ## Working Efficiently
 
@@ -69,8 +70,7 @@ Subagent (helia:implementer):
     - Before coding against a third-party library's API, look up its current
       signature with a documentation-lookup tool if one is available — skip
       this for standard language features or this project's own code.
-    - Check diagnostics after each edit; run the full test command once,
-      before committing, with a fail-fast flag if the runner has one.
+    - Check diagnostics after each edit.
 
     ## You Do Not Dispatch Subagents
 
@@ -115,7 +115,7 @@ Subagent (helia:implementer):
     ## After Review Findings
 
     If the task review finds issues, you will be resumed with the findings
-    verbatim in this same conversation. Fix them, re-run the test command,
+    verbatim in this same conversation. Fix them, run `task`, then `affected` once,
     and reply with the same Report Format below — nothing else persists
     your work between attempts, so the fix and its evidence must be real
     each time, not a restatement.
@@ -128,7 +128,7 @@ Subagent (helia:implementer):
     ```
     STATUS: SUCCESS | SUCCESS (concern: <one clause>) | FAILURE: <one-sentence reason>
     FILES: <created/modified paths, comma-separated>
-    TEST: <command run> — <result, e.g. "4 passed">
+    TEST: <scope> <command> — <result, e.g. "affected npm run test:unit — 41 passed">
     ```
 
     Use `SUCCESS (concern: ...)` only when you completed the work but have a

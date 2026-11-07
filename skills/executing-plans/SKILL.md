@@ -333,7 +333,8 @@ line before sending the prompt.
    instruction to read that section there first;
 2. the target file paths (Create/Modify/Test), copied from Task N's Files
    block;
-3. the test command that proves the task;
+3. the task's test scope: its `task:` and `integration:` lines, and the
+   `affected` command (the plan header's, unless the task replaces it);
 4. at most one constraint — from Global Constraints or
    `<project>/heuristics.md` — when it bears directly on this task, per
    `helia:budgeting-context`'s read cascade.
@@ -520,17 +521,17 @@ section in `vault/<project>/<feature>/plan.md`, its checklist line recording the
 attempt's three-line return, and the open findings — that line is what
 persists between attempts, since there is no separate report file.
 
-**Every attempt:** the implementer fixes, re-runs the test command, and
-returns the same three-line contract. Before re-dispatching the reviewer,
-confirm the `TEST:` line names the covering command and a passing result;
-then re-review. A one-line fix does not need the whole suite re-run. The
+**Every attempt:** the implementer fixes, runs `task` then `affected`
+once, and returns the same three-line contract. Before re-dispatching the
+reviewer, confirm the `TEST:` line names `affected` and a green result;
+then re-review. No attempt re-runs `full`. The
 re-review that follows the **second** fix attempt goes out with
 `effort: xhigh` (escalation table).
 
 **The re-review is scoped.** Get the diff directly — `git diff FIX_BASE..HEAD -U10`,
 where FIX_BASE is the head the previous review saw — and dispatch
-[re-review-prompt.md](re-review-prompt.md) with the findings list, Task N's
-section, and that diff. The re-reviewer verdicts each finding ADDRESSED or
+[re-review-prompt.md](re-review-prompt.md) with the findings list, the
+measurements the previous review reported, Task N's section, and that diff. The re-reviewer verdicts each finding ADDRESSED or
 NOT ADDRESSED and flags new breakage in the fix diff only. Any new breakage
 that would itself be a `REJECT` (functional bug, spec violation, security
 regression) joins the open findings list. Log the re-reviewer's dispatch and
@@ -639,7 +640,7 @@ You: I'm using executing-plans to execute this plan.
 
 Task 1: Hook installation script
 
-[Dispatch implementer: "Task 1" + Files block paths + test command — read vault/<project>/<feature>/plan.md yourself]
+[Dispatch implementer: "Task 1" + Files block paths + test scope — read vault/<project>/<feature>/plan.md yourself]
 
 Implementer: "Before I begin - should the hook be installed at user or system level?"
 
@@ -647,7 +648,7 @@ You: "User level (~/.config/helia/hooks/)"
 
 Implementer: STATUS: SUCCESS
   FILES: bin/install-hook, tests/install-hook.test.js
-  TEST: npm test -- install-hook: 5 passed
+  TEST: affected npm run test:unit — 5 passed
 
 [git diff BASE..HEAD -U10; dispatch task reviewer with the diff]
 Task reviewer: Spec ✅ - all requirements met, nothing extra.
@@ -658,11 +659,11 @@ Task reviewer: Spec ✅ - all requirements met, nothing extra.
 
 Task 2: Recovery modes
 
-[Dispatch implementer: "Task 2" + Files block paths + test command — read vault/<project>/<feature>/plan.md yourself]
+[Dispatch implementer: "Task 2" + Files block paths + test scope — read vault/<project>/<feature>/plan.md yourself]
 
 Implementer: STATUS: SUCCESS
   FILES: src/recovery.js
-  TEST: npm test -- recovery: 8 passed
+  TEST: affected npm run test:unit — 8 passed
 
 [git diff BASE..HEAD -U10; dispatch task reviewer with the diff]
 Task reviewer: Spec ❌:
@@ -673,7 +674,7 @@ Task reviewer: Spec ❌:
 [Fix attempt 1/2: resume the implementer with the finding]
 Implementer: STATUS: SUCCESS
   FILES: src/recovery.js
-  TEST: npm test -- recovery: 10 passed
+  TEST: affected npm run test:unit — 10 passed
 
 [git diff FIX_BASE..HEAD -U10; dispatch scoped re-review]
 Re-reviewer: Missing progress reporting — ADDRESSED (src/recovery.js:41).
