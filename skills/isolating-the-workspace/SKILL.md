@@ -120,11 +120,13 @@ if [ -f go.mod ]; then go mod download; fi
 
 ## Step 3: Verify Clean Baseline
 
-Run tests to ensure workspace starts clean:
+Run the `affected` test scope (`VOCABULARY.md`, **test scope**: the plan
+header's `Test scope affected:` command, the registry's `Tests affectés`, or
+the project's unit-test command) to ensure the workspace starts clean:
 
 ```bash
-# Use project-appropriate command
-npm test / cargo test / pytest / go test ./...
+# the project's fast tests, integration excluded
+npm run test:unit / cargo test --lib / pytest -m "not integration" / go test -short ./...
 ```
 
 **If tests fail:** Report failures, ask whether to proceed or investigate.

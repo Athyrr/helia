@@ -3,6 +3,32 @@
 All notable changes to the Helia method (named aiKit up to 0.27.0). Versions follow the plugin manifests
 (`.claude-plugin/plugin.json`). Dates are the commit dates.
 
+## 0.32.0
+- **Tests proportionnes.** Nouveau terme `test scope` dans `VOCABULARY.md` :
+  `task` (les tests que la tache nomme, pendant le travail), `affected` (les
+  tests rapides que le changement touche, plus un test d'integration
+  seulement si la tache le nomme ; une passe avant le commit), `full` (la
+  suite entiere ; la CI au push, ou le verificateur a la phase 6 sans CI ;
+  jamais une etape de tache).
+- **Fiche projet.** `registering-a-project` : deux lignes facultatives en
+  section 5, `Tests affectés` et `CI` (`CI : aucune` : `full` revient au
+  verificateur). Sans elles, le planificateur prend la commande des tests
+  unitaires, jamais la suite entiere.
+- **Plan.** `writing-plans` : ligne d'en-tete `Test scope affected:`, bloc de
+  tache `**Test scope:**` (`Behaviours:`, `task:`, `integration:`) entre
+  `Interfaces` et les etapes ; un test par comportement nomme, aucun doublon,
+  `full` jamais en etape. Le bloc `**Files:**` ne change pas : `plan-drift`
+  ne lit que lui.
+- **Execution.** `test-driven-development` : un test par comportement nomme,
+  mock seulement a une frontiere processus, reseau ou stockage, ou pour une
+  horloge ou un alea. Implementeur : brief `## Test scope` au lieu de
+  `## Test command`, ligne `TEST` qui nomme le scope lance. Relecteurs : une
+  mesure seulement sur un risque nomme que la lecture ne tranche pas, une
+  fois ; en re-revue, aucune nouvelle mesure sauf si le correctif touche ce
+  qui avait ete mesure. Fin de branche : `affected` une fois, puis le verdict
+  de la CI, ou `full` en local sans CI. Worktree : test de reference au scope
+  `affected`.
+
 ## 0.31.0
 - **Lanceur `helia`.** `helia` ouvre Claude Code avec Helia actif ; `claude`
   seul ouvre un Claude Code natif. `helia install` (une fois par poste et par

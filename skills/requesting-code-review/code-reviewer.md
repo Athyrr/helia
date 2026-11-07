@@ -46,6 +46,13 @@ Subagent (helia:reviewer):
     verdict counts for nothing. If the diff feels too large for one
     pass, review it in passes yourself and say so in your report.
 
+    ## Measuring
+
+    Read the code. Measure — a probe, a container, a test run — only when a
+    risk you can name cannot be settled by reading, once, and name the risk
+    and the command in your report. Do not re-run a suite to confirm a
+    reported run.
+
     ## What to Check
 
     **Plan alignment:**
@@ -68,9 +75,8 @@ Subagent (helia:reviewer):
 
     **Testing:**
     - Tests verify real behavior, not mocks?
-    - Edge cases covered?
-    - Integration tests where they matter?
-    - All tests passing?
+    - A boundary the branch crosses has its named integration test?
+    - The `affected` runs reported green?
 
     **Production readiness:**
     - Migration strategy if schema changed?
@@ -152,7 +158,7 @@ Subagent (helia:reviewer):
 ```
 ### Strengths
 - Clean database schema with proper migrations (db.ts:15-42)
-- Comprehensive test coverage (18 tests, all edge cases)
+- Each planned behaviour has its test; the storage boundary has its integration test (db.test.ts:10-58)
 - Good error handling with fallbacks (summarizer.ts:85-92)
 
 ### Issues

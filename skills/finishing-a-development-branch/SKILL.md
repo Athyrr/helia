@@ -13,9 +13,15 @@ description: Use when implementation is complete, all tests pass, and you need t
 
 ## Step 1: Verify Tests
 
-Run the project's full test suite (`npm test` / `cargo test` / `pytest` / `go test ./...`).
+Run the `affected` test scope once, on the tree you are about to integrate
+(`VOCABULARY.md`, **test scope**: the plan header's `Test scope affected:`
+command, or the registry's `Tests affectés`). Then `full`, once:
 
-**If tests fail**, report the failures and stop — the menu comes after a green suite.
+- the registry's `CI` line names a CI → push the branch and read its verdict
+  before presenting the options;
+- otherwise → run the whole suite locally.
+
+**If tests fail**, locally or at CI, report the failures and stop — the menu comes after a green run.
 Cap what reaches the orchestrator's context at **30 lines**, the same
 principle as `scripts/doctor`'s gate output: the failing test names and their
 assertion messages, never the full raw dump. Strip stack-trace frames beyond
@@ -100,8 +106,8 @@ git checkout <base-branch>
 git pull
 git merge <feature-branch>
 
-# Verify tests on merged result
-<test command>
+# Verify the affected scope on the merged result
+<affected command>
 ```
 
 If tests fail on the merged result: stop, leave the worktree and branch in
@@ -218,7 +224,7 @@ place. If your platform provides a workspace-exit tool, use it.
 
 | Excuse | Reality |
 |--------|---------|
-| "Tests passed earlier this session" | Run the suite on the tree you are about to integrate. A green run only proves the tree it ran on. |
+| "Tests passed earlier this session" | Run `affected` on the tree you are about to integrate and, with a CI, read its verdict for that commit. A green run only proves the tree it ran on. |
 | "They obviously want it merged" | Integration is your human partner's decision. Present the menu and wait. |
 | "They seem done with this feature — I'll offer to discard it" | The menu is complete as written. Discard happens only when your human partner asks for it in so many words. |
 | "'Yeah, get rid of it' counts as confirmation" | Only the typed word `discard` authorizes deletion. |
