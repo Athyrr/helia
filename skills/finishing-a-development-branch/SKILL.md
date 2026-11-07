@@ -17,8 +17,11 @@ Run the `affected` test scope once, on the tree you are about to integrate
 (`VOCABULARY.md`, **test scope**: the plan header's `Test scope affected:`
 command, or the registry's `Tests affectés`). Then `full`, once:
 
-- the registry's `CI` line names a CI → push the branch and read its verdict
-  before presenting the options;
+- the registry's `CI` line names a CI → ask the human partner once before
+  pushing the branch, then read its verdict before presenting the options.
+  Honour the `CI` line's "when": a CI that runs only on pull requests gives
+  its verdict on the PR, so read it there once a PR exists, or fall back to
+  a local `full` once;
 - otherwise → run the whole suite locally.
 
 **If tests fail**, locally or at CI, report the failures and stop — the menu comes after a green run.
@@ -215,10 +218,12 @@ place. If your platform provides a workspace-exit tool, use it.
 
 | Option | Merge | Push | Keep Worktree | Cleanup Branch |
 |--------|-------|------|---------------|----------------|
-| 1. Merge locally | yes | - | - | yes |
+| 1. Merge locally | yes | -* | - | yes |
 | 2. Create PR | - | yes | yes | - |
-| 3. Keep as-is | - | - | yes | - |
+| 3. Keep as-is | - | -* | yes | - |
 | Discard (explicit request only) | - | - | - | yes (force) |
+
+\* Step 1 may already have pushed the branch, with the human's consent, to read a CI verdict.
 
 ## Common Rationalizations
 

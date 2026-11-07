@@ -179,7 +179,7 @@ Confirm:
 
 **Test fails?** Fix code, not test.
 
-**Other tests fail?** Fix now.
+**`affected` fails?** Fix now.
 
 ### REFACTOR - Clean Up
 

@@ -47,6 +47,8 @@ lines and nothing else — no diff, no log, no narrative:
 STATUS: SUCCESS | SUCCESS (concern: <one clause>) | FAILURE: <one-sentence reason>
 FILES: <created/modified paths, comma-separated>
 TEST: <scope> <command> — <result, e.g. "affected npm run test:unit — 41 passed">
+Add ` + integration <command> — <result>` to that line only when the task's
+`integration:` names a test.
 ```
 
 Use `SUCCESS (concern: ...)` only for a real doubt about correctness or

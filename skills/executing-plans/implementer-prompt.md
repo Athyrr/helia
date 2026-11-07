@@ -25,7 +25,8 @@ Subagent (helia:implementer):
 
     ## Test scope
     [Task N's `task:` and `integration:` lines, and the `affected` command —
-    the plan header's, unless Task N replaces it]
+    the plan header's, unless Task N replaces it; for a task with no Test
+    scope block, the scope the orchestrator derived]
 
     ## Constraint
     [at most one line, only if a Global Constraint or a project heuristic
@@ -51,8 +52,9 @@ Subagent (helia:implementer):
     ## Your Job
 
     1. Implement exactly what Task N specifies
-    2. Write the tests Task N's `Behaviours` list names, and no other — a
-       test that seems deserved goes in a concern, not in the code
+    2. Write the tests Task N's `Behaviours` list names (or its own steps,
+       when it has none), and no other — a test that seems deserved goes in
+       a concern, not in the code
     3. While working, run `task`; before committing, one `affected` pass
        (plus `integration`), with a fail-fast flag if the runner has one.
        Never `full`: CI or the verifier runs it
@@ -129,6 +131,8 @@ Subagent (helia:implementer):
     STATUS: SUCCESS | SUCCESS (concern: <one clause>) | FAILURE: <one-sentence reason>
     FILES: <created/modified paths, comma-separated>
     TEST: <scope> <command> — <result, e.g. "affected npm run test:unit — 41 passed">
+    Add ` + integration <command> — <result>` to that line only when the task's
+    `integration:` names a test.
     ```
 
     Use `SUCCESS (concern: ...)` only when you completed the work but have a

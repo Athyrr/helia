@@ -334,7 +334,11 @@ line before sending the prompt.
 2. the target file paths (Create/Modify/Test), copied from Task N's Files
    block;
 3. the task's test scope: its `task:` and `integration:` lines, and the
-   `affected` command (the plan header's, unless the task replaces it);
+   `affected` command (the plan header's, unless the task replaces it). A
+   task with no `**Test scope:**` block takes its Files `Test:` line (or the
+   tests its steps run) as `task`, the registry's `Tests affectés` line — or
+   else the project's unit-test command, never its whole suite — as
+   `affected`; its own steps name the behaviours;
 4. at most one constraint — from Global Constraints or
    `<project>/heuristics.md` — when it bears directly on this task, per
    `helia:budgeting-context`'s read cascade.

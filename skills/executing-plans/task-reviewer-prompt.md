@@ -123,9 +123,10 @@ Subagent (helia:reviewer):
     - Edge cases handled?
 
     **Tests:**
-    - Does each behaviour in Task N's `Behaviours` list have one test that
-      verifies real behavior? A test outside that list, or duplicating an
-      existing test, is a finding.
+    - Does each behaviour in Task N's `Behaviours` list (or its own steps,
+      when it has none) have one test that verifies real behavior? A test
+      outside that list, or duplicating an existing test, is a
+      **non-blocking** finding.
     - A mock of an internal collaborator — not a process, network or
       storage boundary, nor a clock or randomness — is a non-blocking
       finding.
@@ -197,6 +198,10 @@ Subagent (helia:reviewer):
     ### Non-blocking suggestions
 
     - [ ] file:line — the suggestion, one line
+
+    ### Measurements
+
+    - each measurement you made (risk and command), or `none`
 
     ### Verdict
 
