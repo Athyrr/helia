@@ -1134,6 +1134,156 @@ cap_len=$(printf '%s' "$cap_c" | LC_ALL=C.UTF-8 wc -m | tr -d ' ')
 [ "$cap_len" -lt 10000 ] && ok "cap: 30 out-of-format files keep the context under 10000 characters ($cap_len)" || ko "cap: 30 out-of-format files keep the context under 10000 characters" "<10000" "$cap_len"
 has "cap: 30 files give the summary line for 20 more" "- … et 20 autres alertes d'heuristiques" "$cap_c"
 
+echo "appearance_sync"
+# A vault of its own: generic names only (gate 7). Fiche file order differs from
+# name order on purpose: the sort must come from names.
+AV="$TMP/appearance vault"
+mkdir -p "$AV/.obsidian" "$AV/_global" "$AV/_notes" "$AV/projects" \
+         "$AV/alpha-ecosystem" "$AV/alpha-two" "$AV/alpha-one" "$AV/beta-member" \
+         "$AV/solo-b" "$AV/solo-a" "$AV/orphan-dir"
+# name, kind, state, path, summary, part_of: the columns of resolve_projects.
+arow() { printf '%s\t%s\tpresent\t-\t-\t%s\n' "$1" "$2" "$3"; }
+AROWS="$(arow solo-b depot -; arow alpha-two depot alpha-ecosystem; arow alpha-ecosystem ecosysteme -
+         arow beta-ecosystem ecosysteme -; arow beta-member depot beta-ecosystem; arow alpha-one depot alpha-ecosystem
+         arow solo-a conception -; arow ghost depot -)"
+GRAPH_HEAD='{
+  "collapse-filter": true,
+  "search": "path:[x]",
+  "colorGroups": '
+GRAPH_TAIL=',
+  "scale": 0.5,
+  "close": false
+}'
+printf '%s[\n    {\n      "query": "tag:[a]",\n      "color": {\n        "a": 1,\n        "rgb": 1\n      }\n    }\n  ]%s' \
+  "$GRAPH_HEAD" "$GRAPH_TAIL" > "$AV/.obsidian/graph.json"
+appearance_sync "$AV" "$AROWS"
+A_CSS="$AV/.obsidian/snippets/helia-couleurs.css"; A_SORT="$AV/_global/sortspec.md"; A_GRAPH="$AV/.obsidian/graph.json"
+css_color() {  # css_color <dark|light> <name> -> the #rrggbb of that project's root row
+  awk -v sel=".theme-$1 .nav-folder-title[data-path=\"$2\"] {" \
+    'index($0, sel) == 1 { match($0, /--helia-color: #[0-9a-f]+/); print substr($0, RSTART + 15, 7); exit }' "$A_CSS"
+}
+
+# 1. Order: home note, each ecosystem then its members, the projects in no
+# ecosystem, then the rest. beta-ecosystem has no folder: its member stays.
+is "sortspec: home, ecosystems with their members, single projects, the rest" '---
+sorting-spec: |
+  target-folder: /
+  // Généré par Helia depuis le registre (projects/*.md), ne pas modifier.
+  /:files Accueil
+  /folders alpha-ecosystem
+  /folders alpha-one
+  /folders alpha-two
+  /folders beta-member
+  /folders solo-a
+  /folders solo-b
+  /folders _global
+  /folders _notes
+  /folders projects
+  /folders
+  /:files
+---
+
+Généré par Helia depuis le registre (`projects/*.md`), ne pas modifier : réécrit à chaque démarrage de session.' "$(cat "$A_SORT")"
+
+# 2. Section titles, each on the first folder of its group; without the
+# ecosystem folder, the title moves to its first member.
+a_css="$(cat "$A_CSS")"
+is "css: section titles on the first folder of each group" \
+'.tree-item:has(> .nav-folder-title[data-path="alpha-ecosystem"])::before { content: "alpha"; }
+.tree-item:has(> .nav-folder-title[data-path="beta-member"])::before { content: "beta"; }
+.tree-item:has(> .nav-folder-title[data-path="solo-a"])::before { content: "projets seuls"; }
+.tree-item:has(> .nav-folder-title[data-path="_global"])::before { content: "vault"; }' \
+  "$(printf '%s\n' "$a_css" | grep '::before { content:')"
+
+# 2b. A member is indented by its own row (the explorer is virtualised and
+# members are root siblings; Obsidian sets an inline !important padding on every
+# row, so the title is not the lever): the label and the chevron both move 14px
+# right of an ecosystem's, the chevron staying visible.
+has "css: a member label is indented 14px" '.nav-folder-title[data-path="alpha-one"] > .nav-folder-title-content { margin-inline-start: 14px; }' "$a_css"
+has "css: a member chevron follows the label (default -20px + 14px)" '.nav-folder-title[data-path="alpha-one"] > .collapse-icon { margin-inline-start: -6px; }' "$a_css"
+hasnt "css: an ecosystem row is not indented" '.nav-folder-title[data-path="alpha-ecosystem"] > .nav-folder-title-content' "$a_css"
+
+# 3. A fiche without a folder adds nothing, a folder without a fiche gets nothing.
+hasnt "css: no rule for a fiche without folder" 'data-path="ghost"' "$a_css"
+hasnt "css: no rule for a folder without fiche" 'orphan-dir' "$a_css"
+hasnt "sortspec: no line for a fiche without folder" 'ghost' "$(cat "$A_SORT")"
+
+# 4. Only the value of "colorGroups" changes; every other byte stays.
+a_graph="$(cat "$A_GRAPH")"
+case "$a_graph" in
+  "$GRAPH_HEAD"*"$GRAPH_TAIL") ok "graph.json: bytes outside colorGroups unchanged" ;;
+  *) ko "graph.json: bytes outside colorGroups unchanged" "$GRAPH_HEAD…$GRAPH_TAIL" "$a_graph" ;;
+esac
+printf '%s' "$a_graph" | json_valid && ok "graph.json: still valid JSON" || ko "graph.json: still valid JSON" "JSON" "invalid"
+is "graph.json: one group per project folder" "6" "$(printf '%s\n' "$a_graph" | grep -c '"query": "path:')"
+has "graph.json: query anchors the folder" '"query": "path:/^alpha-ecosystem\\//",' "$a_graph"
+hasnt "graph.json: the old groups are gone" 'tag:[a]' "$a_graph"
+
+# 5. Light and dark are both generated, and differ.
+d="$(css_color dark solo-a)"; l="$(css_color light solo-a)"
+[ -n "$d" ] && [ -n "$l" ] && [ "$d" != "$l" ] && ok "css: dark and light colours for a project ($d, $l)" \
+  || ko "css: dark and light colours for a project" "two different colours" "$d / $l"
+
+# 6. Rewritten only on change: a second run keeps every modification time.
+touch -d @1577836800 "$A_CSS" "$A_SORT" "$A_GRAPH"
+appearance_sync "$AV" "$AROWS"
+is "unchanged content: modification times kept" "1577836800 1577836800 1577836800" \
+   "$(stat -c %Y "$A_CSS" "$A_SORT" "$A_GRAPH" | tr '\n' ' ' | sed 's/ $//')"
+
+# 7. Stability: adding a single project and a member changes no other colour.
+before=""; for p in alpha-ecosystem alpha-one alpha-two beta-member solo-a solo-b; do
+  before+="$p $(css_color dark "$p") $(css_color light "$p")"$'\n'; done
+mkdir -p "$AV/solo-c" "$AV/alpha-three"
+appearance_sync "$AV" "$AROWS"$'\n'"$(arow solo-c depot -; arow alpha-three depot alpha-ecosystem)"
+after=""; for p in alpha-ecosystem alpha-one alpha-two beta-member solo-a solo-b; do
+  after+="$p $(css_color dark "$p") $(css_color light "$p")"$'\n'; done
+is "adding two fiches changes no other colour" "$before" "$after"
+has "the new project has its colour" '.theme-dark .nav-folder-title[data-path="solo-c"]' "$(cat "$A_CSS")"
+
+# 7b. Two lone projects whose names give the same hue (proj-0, proj-245: hue 20)
+# still get different colours: saturation and lightness come from the name's hash.
+CV="$TMP/collision vault"; mkdir -p "$CV/.obsidian" "$CV/proj-0" "$CV/proj-245"
+A_CSS_SAVE="$A_CSS"; A_CSS="$CV/.obsidian/snippets/helia-couleurs.css"
+appearance_sync "$CV" "$(arow proj-0 depot -; arow proj-245 depot -)"
+cd0="$(css_color dark proj-0)"; cd1="$(css_color dark proj-245)"; cl0="$(css_color light proj-0)"; cl1="$(css_color light proj-245)"
+[ -n "$cd0" ] && [ "$cd0" != "$cd1" ] && [ "$cl0" != "$cl1" ] && ok "same-hue lone projects get different colours ($cd0 / $cd1, $cl0 / $cl1)" \
+  || ko "same-hue lone projects get different colours" "different" "$cd0 $cd1 $cl0 $cl1"
+A_CSS="$A_CSS_SAVE"
+
+# 8. A vault without .obsidian/ is left alone.
+NV="$TMP/no obsidian"; mkdir -p "$NV/_global" "$NV/solo-a"
+appearance_sync "$NV" "$(arow solo-a depot -)"
+[ ! -e "$NV/.obsidian" ] && [ ! -e "$NV/_global/sortspec.md" ] && ok "vault without .obsidian/: nothing written" \
+  || ko "vault without .obsidian/: nothing written" "no file" "$(ls -A "$NV" "$NV/_global")"
+
+# 9. No partial file on error: a failing awk renames nothing and leaves no
+# temporary file; an unclosed colorGroups leaves graph.json as it was.
+printf '/* sentinel */\n' > "$A_CSS"
+( awk() { command awk "$@"; return 3; }; appearance_sync "$AV" "$AROWS" )
+is "awk failure: target untouched" "/* sentinel */" "$(cat "$A_CSS")"
+is "awk failure: no temporary file left" "" "$(find "$AV" -name '*.tmp.*')"
+printf '{\n  "colorGroups": [\n' > "$A_GRAPH"
+appearance_sync "$AV" "$AROWS"
+is "unclosed colorGroups: graph.json untouched" '{
+  "colorGroups": [' "$(cat "$A_GRAPH")"
+echo "hook: Obsidian appearance"
+# The hook calls appearance_sync for every declared vault, from the rows it
+# already resolved: no second scan.
+HA="$TMP/hook appearance"; mkdir -p "$HA/.obsidian" "$HA/_global" "$HA/projects" "$HA/solo-a"
+printf -- '---\nname: solo-a\nkind: conception\nsummary: fiche de test\n---\n' > "$HA/projects/solo-a.md"
+printf 'vault ha %s\n' "$HA" > "$TMP/c-ha"
+HELIA_VAULTS="$TMP/c-ha" bash hooks/session-start > /dev/null
+[ -f "$HA/.obsidian/snippets/helia-couleurs.css" ] && [ -f "$HA/_global/sortspec.md" ] \
+  && ok "hook: writes the appearance files of a vault with .obsidian/" \
+  || ko "hook: writes the appearance files of a vault with .obsidian/" "helia-couleurs.css + sortspec.md" "$(ls -A "$HA/.obsidian" "$HA/_global")"
+# A generation that cannot write (snippets/ is a regular file) never fails the hook.
+HB="$TMP/hook blocked"; mkdir -p "$HB/.obsidian" "$HB/projects" "$HB/solo-a"; : > "$HB/.obsidian/snippets"
+printf -- '---\nname: solo-a\nkind: conception\nsummary: fiche de test\n---\n' > "$HB/projects/solo-a.md"
+printf 'vault hb %s\n' "$HB" > "$TMP/c-hb"
+hb_out=$(HELIA_VAULTS="$TMP/c-hb" bash hooks/session-start); hb_rc=$?
+[ "$hb_rc" = 0 ] && printf '%s' "$hb_out" | json_valid \
+  && ok "hook: exit 0 and valid JSON when the appearance cannot be written" \
+  || ko "hook: exit 0 and valid JSON when the appearance cannot be written" "0 + JSON" "$hb_rc"
 echo "$pass passes, $fail echecs"
 # `exit`, jamais un simple `[ "$fail" = 0 ]` en derniere ligne : le statut
 # d'un script sans `set -e` est celui de sa DERNIERE commande, donc toute

@@ -210,6 +210,7 @@ An ecosystem owns the same directory, from the same skeleton (`p=<ecosystem name
    HELIA_VAULTS=~/.config/helia/vaults CLAUDE_PLUGIN_ROOT=<helia clone> \
      bash <helia clone>/hooks/session-start | python3 -m json.tool | grep <name>
    ```
+   The session hook also regenerates the `.obsidian/graph.json` colour groups (and two gitignored files) from the registry, so commit `.obsidian/graph.json` together with the new registry file.
 6. No deploy. The registry is read from source.
 
 ## Red flags

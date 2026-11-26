@@ -220,6 +220,9 @@ the method itself.
   projects/                   the registry: one file per project
   _global/heuristics.md       technical traps that hold for every project — machine, OS, shell
   _global/consignes.md        the human partner's instructions for every project — injected at session start
+  _global/sortspec.md         generated at session start: the sidebar order, read by the custom-sort Obsidian plugin
+  .obsidian/snippets/helia-couleurs.css   generated at session start: one colour per project, indents, section titles
+  .obsidian/graph.json        its "colorGroups" rewritten at session start, every other key left as it is
   _notes/                     notes whose idea would be another project
   <project>/heuristics.md     this project's traps (phase 6) and the human partner's instructions for it (when given)
   <project>/trame.md          how the project splits into tranches, if it does — VOCABULARY.md, The trame
@@ -236,7 +239,9 @@ the method itself.
 The hook resolves projects from the vaults declared in
 `~/.config/helia/vaults` and a scan of their declared roots. So the method
 travels everywhere while a registry stays bound to one vault — and the two
-never live in the same repository.
+never live in the same repository. When a vault has a `.obsidian/` directory, the same hook also writes the three appearance files above, each only when its content changes; a failure there never fails the hook.
+
+`.obsidian/snippets/helia-couleurs.css` and `_global/sortspec.md` are generated: gitignore them in the vault. The hook replaces any existing `colorGroups` of `.obsidian/graph.json` with the generated ones, so commit that file along with the registry.
 
 **Helia writes nothing inside the project repositories** except the code
 changes themselves. No specs, no plan, no ledger, no scratch. `git status`
