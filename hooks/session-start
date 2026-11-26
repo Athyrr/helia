@@ -58,6 +58,7 @@ resolved=0
 stranded=""
 stale=""
 consignes_warn=""
+heuristics_warn=""
 while IFS=$'\t' read -r vname vpath; do
     [ -n "$vname" ] || continue
     vault_count=$((vault_count + 1))
@@ -71,6 +72,10 @@ while IFS=$'\t' read -r vname vpath; do
     if [ "$csize" -gt "$CONSIGNES_WARN" ]; then
         consignes_warn+="- \`_global/consignes.md\` du vault \`${vname}\` fait ${csize} octets (plafond 4 000) : à resserrer"$'\n'
     fi
+    # Format of every first-level <folder>/heuristics.md, same place as the
+    # consignes warning, for a vault with or without a registry (lib/vaults).
+    hwarn="$(heuristics_warnings "$vname" "$vpath")"
+    [ -z "$hwarn" ] || heuristics_warn+="${hwarn}"$'\n'
     # Une seule capture de resolve_projects : l'appeler deux fois relancerait le
     # scan git. Les deux flux (lignes, avertissements) sortent de CETTE variable.
     resolved_rows="$(resolve_projects "$vname")"
@@ -121,6 +126,7 @@ else
 fi
 [ -z "$stale" ] || registry+=$'\n\n## Vault(s) en retard sur leur remote\n\n'"${stale}"
 [ -z "$consignes_warn" ] || registry+=$'\n\n## Consignes communes trop longues\n\n'"${consignes_warn}"
+[ -z "$heuristics_warn" ] || registry+=$'\n\n## Heuristiques hors format\n\n'"${heuristics_warn}"
 
 # Variables d'environnement qui ecrasent model/effort des archetypes : une ligne
 # chacune, calculee par lib/vaults. Ajoutee a `registry`, donc AVANT

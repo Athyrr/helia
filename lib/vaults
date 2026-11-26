@@ -487,6 +487,46 @@ consignes_text() {
   done
   printf '%s%s' "$out" "$line"
 }
+
+# --- heuristics format (hooks/session-start) ----------------------------------
+# <vault>/<folder>/heuristics.md, first level only (_global/ included; a need's
+# _archive/ is two levels down, out of reach of the glob; a root _archive/ is
+# skipped by name). Two checks, the format of helia:verifying-completion: at
+# most HEURISTICS_MAX_RULES rules (a rule is a line starting with "- " in
+# column 1) and no line longer than HEURISTICS_MAX_CHARS characters. Counted in
+# CHARACTERS, portably under LC_ALL=C (mawk and gawk alike): the bytes of a
+# line minus its UTF-8 continuation bytes (0x80-0xBF). CR is not counted.
+HEURISTICS_MAX_RULES=50
+HEURISTICS_MAX_CHARS=200
+
+# heuristics_warnings <vault-name> <vault-path> -> one warning line per check a
+# file fails, nothing for a compliant, absent or unreadable file. Never fails:
+# sourced under `set -euo pipefail` by hooks/session-start. One awk for the
+# whole vault, not one per file: the hook runs at every session start.
+heuristics_warnings() {
+  local vname="${1:-}" vpath="${2:-}" f d files=()
+  [ -n "$vpath" ] && [ -d "$vpath" ] || return 0
+  for f in "$vpath"/*/heuristics.md; do
+    d="${f%/heuristics.md}"; d="${d##*/}"
+    [ "$d" != "_archive" ] && [ -f "$f" ] && [ -r "$f" ] && files+=("$f")
+  done
+  [ "${#files[@]}" -gt 0 ] || return 0
+  LC_ALL=C awk -v v="$vname" -v maxr="$HEURISTICS_MAX_RULES" -v maxc="$HEURISTICS_MAX_CHARS" '
+    function flush() {
+      if (f == "") return
+      if (r > maxr) printf "- `%s/heuristics.md` du vault `%s` : %d règles (plafond %d) : à resserrer\n", f, v, r, maxr
+      if (l > 0)    printf "- `%s/heuristics.md` du vault `%s` : %d lignes de plus de %d caractères : à couper\n", f, v, l, maxc
+    }
+    FNR == 1 { flush(); f = FILENAME; sub(/\/heuristics\.md$/, "", f); sub(/.*\//, "", f); r = 0; l = 0 }
+    {
+      gsub(/\r/, ""); s = $0
+      if (length($0) - gsub(/[\200-\277]/, "", s) > maxc) l++
+      if ($0 ~ /^- /) r++
+    }
+    END { flush() }
+  ' "${files[@]}" 2> /dev/null || true
+  return 0
+}
 # escape_for_json <chaine> : partagee par hooks/session-start et hooks/consignes.
 escape_for_json() {
     local s="$1"
