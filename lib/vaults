@@ -563,3 +563,176 @@ escape_for_json() {
     s="${s//$'\t'/\\t}"
     printf '%s' "$s"
 }
+
+# --- Obsidian appearance (hooks/session-start) --------------------------------
+# For a vault that has a .obsidian/ directory, three files are derived from the
+# registry (kind, part_of) at every session start:
+#   .obsidian/snippets/helia-couleurs.css  colours, backgrounds, indents, section titles
+#   .obsidian/graph.json                   only the value of "colorGroups" is replaced
+#   _global/sortspec.md                    the custom-sort order of the vault root
+# Sidebar order: each ecosystem (alphabetical), its folder then its members'
+# (alphabetical); then the projects in no ecosystem (alphabetical); then the
+# rest. Hues come from a hash of the name, never from a position, so adding or
+# removing a project changes no other colour. A member is a shade of its
+# ecosystem's hue. Dark and light variants are pushed until they reach a 4.5:1
+# contrast on Obsidian's default sidebar background (#262626, #f6f6f6).
+# One awk for everything: it reads the current files, writes a temporary file
+# only for what changed, and prints the changed paths; bash then renames them.
+# Steady state (nothing changed): one fork, no write. Never fails: sourced under
+# `set -euo pipefail` by hooks/session-start; on any error nothing is renamed
+# and every temporary file is removed.
+APPEARANCE_CSS=".obsidian/snippets/helia-couleurs.css"
+APPEARANCE_GRAPH=".obsidian/graph.json"
+APPEARANCE_SORT="_global/sortspec.md"
+
+_APPEARANCE_AWK='
+function isort(a, n,   i, j, v) {
+  for (i = 2; i <= n; i++) { v = a[i]; for (j = i - 1; j >= 1 && a[j] > v; j--) a[j + 1] = a[j]; a[j + 1] = v }
+}
+function hash(s,   i, h) {
+  h = 0
+  for (i = 1; i <= length(s); i++) h = (h * 31 + ord[substr(s, i, 1)]) % 1000003
+  return h
+}
+function abs(v) { return v < 0 ? -v : v }
+function hsl(h, s, l,   c, x, m, r, g, b, hp) {
+  s /= 100; l /= 100
+  c = (1 - abs(2 * l - 1)) * s; hp = h / 60; x = c * (1 - abs(hp % 2 - 1)); m = l - c / 2
+  if (hp < 1) { r = c; g = x; b = 0 } else if (hp < 2) { r = x; g = c; b = 0 }
+  else if (hp < 3) { r = 0; g = c; b = x } else if (hp < 4) { r = 0; g = x; b = c }
+  else if (hp < 5) { r = x; g = 0; b = c } else { r = c; g = 0; b = x }
+  R = int((r + m) * 255 + 0.5); G = int((g + m) * 255 + 0.5); B = int((b + m) * 255 + 0.5)
+  return sprintf("#%02x%02x%02x", R, G, B)
+}
+function lin(v) { return v <= 0.03928 ? v / 12.92 : exp(2.4 * log((v + 0.055) / 1.055)) }
+function contrast(h, s, l, bg,   y) {
+  hsl(h, s, l); y = 0.2126 * lin(R / 255) + 0.7152 * lin(G / 255) + 0.0722 * lin(B / 255)
+  return y > bg ? (y + 0.05) / (bg + 0.05) : (bg + 0.05) / (y + 0.05)
+}
+function slurp(f,   s, line, got) {
+  s = ""; got = 0
+  while ((getline line < f) > 0) { s = s line; got = 1 }
+  close(f)
+  return got ? s : ""
+}
+function rule(mode, nm, c, role,   v, extra) {
+  v = "--helia-color: " c "; --nav-item-color: " c "; --nav-item-color-hover: " c "; --nav-item-color-active: " c "; --nav-item-color-selected: " c "; --icon-color: " c ";"
+  extra = (role == "eco") ? " background-color: " c "24; font-weight: 600;" : ""
+  return ".theme-" mode " .nav-folder-title[data-path=\"" nm "\"] { --helia-dot: " c "; " v extra " }\n" \
+         ".theme-" mode " .tree-item-self[data-path^=\"" nm "/\"] { " v " }\n"
+}
+function emit(nm, role, label,   h, sat, lit, hm, dl, ll, dark, light, rgb) {
+  if (role == "member") {
+    hm = hash(nm); h = (hue[parent[nm]] + hm % 49 - 24 + 360) % 360
+    sat = 68 + int(hm / 49) % 4 * 5; lit = 54 + int(hm / 196) % 5 * 4
+  } else { h = hue[nm]; sat = (role == "eco") ? 85 : 80; lit = 64 }
+  dl = lit; while (dl < 90 && contrast(h, sat, dl, BGD) < 4.5) dl += 2
+  ll = lit - 24; while (ll > 10 && contrast(h, sat, ll, BGL) < 4.5) ll -= 2
+  light = hsl(h, sat, ll); dark = hsl(h, sat, dl); rgb = R * 65536 + G * 256 + B
+  np++
+  if (label != "") css = css ".tree-item:has(> .nav-folder-title[data-path=\"" nm "\"])::before { content: \"" label "\"; }\n"
+  css = css rule("dark", nm, dark, role) rule("light", nm, light, role)
+  if (role == "member") {
+    css = css ".nav-folder-title[data-path=\"" nm "\"] > .collapse-icon { margin-inline-start: 14px; }\n"
+    css = css ".tree-item:has(> .nav-folder-title[data-path=\"" nm "\"]) > .nav-folder-children { margin-inline-start: 14px; }\n"
+  }
+  sort = sort "  /folders " nm "\n"
+  groups = groups (np > 1 ? ",\n" : "") "    {\n      \"query\": \"path:/^" nm "\\\\//\",\n      \"color\": {\n        \"a\": 1,\n        \"rgb\": " rgb "\n      }\n    }"
+}
+function write(rel, new,   path, tmp) {
+  path = ENVIRON["VPATH"] "/" rel
+  if (new == slurp(path)) return
+  tmp = path ".tmp." ENVIRON["SUFFIX"]
+  printf "%s", new > tmp
+  if (close(tmp) != 0) exit 1
+  print rel
+}
+function merge(old, frag,   k, i, n, c, s, depth, instr, esc) {
+  k = index(old, "\"colorGroups\""); if (k == 0) return ""
+  n = length(old)
+  for (i = k + 13; i <= n && substr(old, i, 1) ~ /[ \t\r\n]/; i++) ;
+  if (substr(old, i, 1) != ":") return ""
+  for (i++; i <= n && substr(old, i, 1) ~ /[ \t\r\n]/; i++) ;
+  if (substr(old, i, 1) != "[") return ""
+  s = i; depth = 0; instr = 0; esc = 0
+  for (; i <= n; i++) {
+    c = substr(old, i, 1)
+    if (instr) { if (esc) esc = 0; else if (c == "\\") esc = 1; else if (c == "\"") instr = 0; continue }
+    if (c == "\"") instr = 1
+    else if (c == "[") depth++
+    else if (c == "]" && --depth == 0) return substr(old, 1, s - 1) frag substr(old, i + 1)
+  }
+  return ""
+}
+BEGIN {
+  RS = "\001"
+  BGD = lin(38 / 255); BGL = lin(246 / 255)
+  for (i = 1; i < 256; i++) ord[sprintf("%c", i)] = i
+  n = split(ENVIRON["ROWS"], L, "\n")
+  for (i = 1; i <= n; i++) {
+    if (split(L[i], f, "\t") < 4) continue
+    if (f[1] !~ /^[A-Za-z0-9][A-Za-z0-9._-]*$/) continue
+    cnt++; name[cnt] = f[1]; kindof[f[1]] = f[2]; partof[f[1]] = f[3]; has[f[1]] = (f[4] == "1")
+    x = hash(f[1]) * 0.6180339887498949; hue[f[1]] = int((x - int(x)) * 360)
+  }
+  for (i = 1; i <= cnt; i++) {
+    nm = name[i]; p = partof[nm]
+    if (p != "-" && p != "" && (p in kindof) && kindof[p] == "ecosysteme" && (partof[p] == "-" || partof[p] == "")) {
+      parent[nm] = p; nmem[p]++; mem[p, nmem[p]] = nm
+    } else if (kindof[nm] == "ecosysteme") eco[++ne] = nm
+    else solo[++ns] = nm
+  }
+  isort(eco, ne); isort(solo, ns)
+  css = "/* Généré par Helia depuis le registre (projects/*.md), ne pas modifier : réécrit à chaque démarrage de session. */\n"
+  css = css ".tree-item:has(> .nav-file-title[data-path=\"_global/sortspec.md\"]) { display: none; }\n"
+  sort = "---\nsorting-spec: |\n  target-folder: /\n  // Généré par Helia depuis le registre (projects/*.md), ne pas modifier.\n  /:files Accueil\n"
+  for (e = 1; e <= ne; e++) {
+    label = eco[e]; sub(/-ecosystem$/, "", label)
+    if (has[eco[e]]) { emit(eco[e], "eco", label); label = "" }
+    delete m; k = nmem[eco[e]] + 0
+    for (j = 1; j <= k; j++) m[j] = mem[eco[e], j]
+    isort(m, k)
+    for (j = 1; j <= k; j++) if (has[m[j]]) { emit(m[j], "member", label); label = "" }
+  }
+  label = "projets seuls"
+  for (j = 1; j <= ns; j++) if (has[solo[j]]) { emit(solo[j], "solo", label); label = "" }
+  split(ENVIRON["VDIRS"], vd, " ")
+  if (vd[1] != "") css = css ".tree-item:has(> .nav-folder-title[data-path=\"" vd[1] "\"])::before { content: \"vault\"; }\n"
+  sort = sort "  /folders _global\n  /folders _notes\n  /folders projects\n  /folders\n  /:files\n---\n\nGénéré par Helia depuis le registre (`projects/*.md`), ne pas modifier : réécrit à chaque démarrage de session.\n"
+  groups = (np > 0) ? "[\n" groups "\n  ]" : "[]"
+  write(ENVIRON["CSS"], css)
+  if (ENVIRON["SORT_OK"] == "1") write(ENVIRON["SORT"], sort)
+  if (ENVIRON["GRAPH_OK"] == "1") { g = merge(slurp(ENVIRON["VPATH"] "/" ENVIRON["GRAPH"]), groups); if (g != "") write(ENVIRON["GRAPH"], g) }
+}'
+
+# appearance_sync <vault-path> <resolve_projects rows of that vault> -> nothing.
+# Writes the three files above, each only when its content changes. A vault
+# without .obsidian/ is left alone; _global/sortspec.md needs an existing
+# _global/; graph.json is never created, only edited, and left untouched when
+# its "colorGroups" key cannot be found and closed. A fiche whose folder does
+# not exist adds nothing.
+appearance_sync() {
+  local vpath="${1:-}" rows="${2:-}" name kind _s _p _sum part has t out list="" vdirs="" d
+  local sort_ok=0 graph_ok=0
+  [ -n "$vpath" ] && [ -d "$vpath/.obsidian" ] && [ -n "$rows" ] || return 0
+  while IFS=$'\t' read -r name kind _s _p _sum part; do
+    [ -n "$name" ] || continue
+    has=0; [ -d "$vpath/$name" ] && has=1
+    list+="$name"$'\t'"$kind"$'\t'"${part:--}"$'\t'"$has"$'\n'
+  done <<< "$rows"
+  for d in _global _notes projects; do [ -d "$vpath/$d" ] && vdirs+="$d "; done
+  [ -d "$vpath/_global" ] && sort_ok=1
+  [ -f "$vpath/$APPEARANCE_GRAPH" ] && graph_ok=1
+  [ -d "$vpath/.obsidian/snippets" ] || mkdir -p "$vpath/.obsidian/snippets" 2> /dev/null || return 0
+  out="$(ROWS="$list" VDIRS="$vdirs" VPATH="$vpath" SUFFIX="$$" CSS="$APPEARANCE_CSS" \
+         SORT="$APPEARANCE_SORT" GRAPH="$APPEARANCE_GRAPH" SORT_OK="$sort_ok" GRAPH_OK="$graph_ok" \
+         LC_ALL=C awk "$_APPEARANCE_AWK" < /dev/null 2> /dev/null)" || {
+    rm -f "$vpath/$APPEARANCE_CSS.tmp.$$" "$vpath/$APPEARANCE_SORT.tmp.$$" "$vpath/$APPEARANCE_GRAPH.tmp.$$" 2> /dev/null || :
+    return 0
+  }
+  while IFS= read -r t; do
+    [ -n "$t" ] || continue
+    mv -f "$vpath/$t.tmp.$$" "$vpath/$t" 2> /dev/null || rm -f "$vpath/$t.tmp.$$" 2> /dev/null || :
+  done <<< "$out"
+  return 0
+}
