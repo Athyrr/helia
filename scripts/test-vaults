@@ -1113,6 +1113,27 @@ h_ctx=$(printf "%s" "$h_hook" | json_ctx)
 has "session-start: heuristics heading" "## Heuristiques hors format" "$h_ctx"
 has "session-start: heuristics line" '- `p51/heuristics.md` du vault `hv` : 51 règles (plafond 50) : à resserrer' "$h_ctx"
 
+
+# Cap of the warning block: 10 lines then a summary line, never more.
+CAPV="$TMP/cap vault"; mkdir -p "$CAPV/projects"
+printf -- '---\nname: fiche-cap\nkind: conception\nsummary: fiche de test\n---\n' > "$CAPV/projects/fiche-cap.md"
+printf 'vault capv %s\n' "$CAPV" > "$TMP/c-cap"
+cap_make() {  # cap_make <n> : n out-of-format heuristics files
+  rm -rf "$CAPV"/f-*; local i
+  for i in $(seq 1 "$1"); do mkdir -p "$CAPV/f-$i"; { printf '# f — heuristics\n\n## T\n\n'; hrules 51; } > "$CAPV/f-$i/heuristics.md"; done
+}
+cap_ctx() { HELIA_VAULTS="$TMP/c-cap" bash hooks/session-start | json_ctx; }
+cap_make 11; cap_c=$(cap_ctx)
+is "cap: 11 files give exactly 10 warning lines" "10" "$(printf '%s\n' "$cap_c" | grep -c '^- `f-.*règles (plafond')"
+has "cap: 11 files give the summary line for 1 more" "- … et 1 autres alertes d'heuristiques" "$cap_c"
+cap_make 10; cap_c=$(cap_ctx)
+is "cap: 10 files give 10 warning lines" "10" "$(printf '%s\n' "$cap_c" | grep -c '^- `f-.*règles (plafond')"
+hasnt "cap: 10 files give no summary line" "autres alertes d'heuristiques" "$cap_c"
+cap_make 30; cap_c=$(cap_ctx)
+cap_len=$(printf '%s' "$cap_c" | LC_ALL=C.UTF-8 wc -m | tr -d ' ')
+[ "$cap_len" -lt 10000 ] && ok "cap: 30 out-of-format files keep the context under 10000 characters ($cap_len)" || ko "cap: 30 out-of-format files keep the context under 10000 characters" "<10000" "$cap_len"
+has "cap: 30 files give the summary line for 20 more" "- … et 20 autres alertes d'heuristiques" "$cap_c"
+
 echo "$pass passes, $fail echecs"
 # `exit`, jamais un simple `[ "$fail" = 0 ]` en derniere ligne : le statut
 # d'un script sans `set -e` est celui de sa DERNIERE commande, donc toute

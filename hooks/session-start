@@ -126,6 +126,9 @@ else
 fi
 [ -z "$stale" ] || registry+=$'\n\n## Vault(s) en retard sur leur remote\n\n'"${stale}"
 [ -z "$consignes_warn" ] || registry+=$'\n\n## Consignes communes trop longues\n\n'"${consignes_warn}"
+# Capped: every line stays available through heuristics_warnings, but the
+# injected block must keep the context under 10 000 characters.
+heuristics_warn="$(printf '%s' "$heuristics_warn" | heuristics_cap)"
 [ -z "$heuristics_warn" ] || registry+=$'\n\n## Heuristiques hors format\n\n'"${heuristics_warn}"
 
 # Variables d'environnement qui ecrasent model/effort des archetypes : une ligne
