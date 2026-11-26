@@ -79,6 +79,9 @@ while IFS=$'\t' read -r vname vpath; do
     # Une seule capture de resolve_projects : l'appeler deux fois relancerait le
     # scan git. Les deux flux (lignes, avertissements) sortent de CETTE variable.
     resolved_rows="$(resolve_projects "$vname")"
+    # Obsidian appearance of this vault, from these same rows (lib/vaults):
+    # three files, each rewritten only when it changes. Never fails the hook.
+    appearance_sync "$vpath" "$resolved_rows" || :
     warns="$(printf '%s\n' "$resolved_rows" | project_warnings)"
     rows="$(printf '%s\n' "$resolved_rows" | render_project_rows "$warns")"
     [ -z "$rows" ] || rows+=$'\n'

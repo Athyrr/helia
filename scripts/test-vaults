@@ -1248,6 +1248,24 @@ printf '{\n  "colorGroups": [\n' > "$A_GRAPH"
 appearance_sync "$AV" "$AROWS"
 is "unclosed colorGroups: graph.json untouched" '{
   "colorGroups": [' "$(cat "$A_GRAPH")"
+echo "hook: Obsidian appearance"
+# The hook calls appearance_sync for every declared vault, from the rows it
+# already resolved: no second scan.
+HA="$TMP/hook appearance"; mkdir -p "$HA/.obsidian" "$HA/_global" "$HA/projects" "$HA/solo-a"
+printf -- '---\nname: solo-a\nkind: conception\nsummary: fiche de test\n---\n' > "$HA/projects/solo-a.md"
+printf 'vault ha %s\n' "$HA" > "$TMP/c-ha"
+HELIA_VAULTS="$TMP/c-ha" bash hooks/session-start > /dev/null
+[ -f "$HA/.obsidian/snippets/helia-couleurs.css" ] && [ -f "$HA/_global/sortspec.md" ] \
+  && ok "hook: writes the appearance files of a vault with .obsidian/" \
+  || ko "hook: writes the appearance files of a vault with .obsidian/" "helia-couleurs.css + sortspec.md" "$(ls -A "$HA/.obsidian" "$HA/_global")"
+# A generation that cannot write (snippets/ is a regular file) never fails the hook.
+HB="$TMP/hook blocked"; mkdir -p "$HB/.obsidian" "$HB/projects" "$HB/solo-a"; : > "$HB/.obsidian/snippets"
+printf -- '---\nname: solo-a\nkind: conception\nsummary: fiche de test\n---\n' > "$HB/projects/solo-a.md"
+printf 'vault hb %s\n' "$HB" > "$TMP/c-hb"
+hb_out=$(HELIA_VAULTS="$TMP/c-hb" bash hooks/session-start); hb_rc=$?
+[ "$hb_rc" = 0 ] && printf '%s' "$hb_out" | json_valid \
+  && ok "hook: exit 0 and valid JSON when the appearance cannot be written" \
+  || ko "hook: exit 0 and valid JSON when the appearance cannot be written" "0 + JSON" "$hb_rc"
 echo "$pass passes, $fail echecs"
 # `exit`, jamais un simple `[ "$fail" = 0 ]` en derniere ligne : le statut
 # d'un script sans `set -e` est celui de sa DERNIERE commande, donc toute
