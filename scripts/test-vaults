@@ -1240,6 +1240,16 @@ after=""; for p in alpha-ecosystem alpha-one alpha-two beta-member solo-a solo-b
 is "adding two fiches changes no other colour" "$before" "$after"
 has "the new project has its colour" '.theme-dark .nav-folder-title[data-path="solo-c"]' "$(cat "$A_CSS")"
 
+# 7b. Two lone projects whose names give the same hue (proj-0, proj-245: hue 20)
+# still get different colours: saturation and lightness come from the name's hash.
+CV="$TMP/collision vault"; mkdir -p "$CV/.obsidian" "$CV/proj-0" "$CV/proj-245"
+A_CSS_SAVE="$A_CSS"; A_CSS="$CV/.obsidian/snippets/helia-couleurs.css"
+appearance_sync "$CV" "$(arow proj-0 depot -; arow proj-245 depot -)"
+cd0="$(css_color dark proj-0)"; cd1="$(css_color dark proj-245)"; cl0="$(css_color light proj-0)"; cl1="$(css_color light proj-245)"
+[ -n "$cd0" ] && [ "$cd0" != "$cd1" ] && [ "$cl0" != "$cl1" ] && ok "same-hue lone projects get different colours ($cd0 / $cd1, $cl0 / $cl1)" \
+  || ko "same-hue lone projects get different colours" "different" "$cd0 $cd1 $cl0 $cl1"
+A_CSS="$A_CSS_SAVE"
+
 # 8. A vault without .obsidian/ is left alone.
 NV="$TMP/no obsidian"; mkdir -p "$NV/_global" "$NV/solo-a"
 appearance_sync "$NV" "$(arow solo-a depot -)"

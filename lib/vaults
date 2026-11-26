@@ -625,7 +625,8 @@ function emit(nm, role, label,   h, sat, lit, hm, dl, ll, dark, light, rgb) {
   if (role == "member") {
     hm = hash(nm); h = (hue[parent[nm]] + hm % 49 - 24 + 360) % 360
     sat = 68 + int(hm / 49) % 4 * 5; lit = 54 + int(hm / 196) % 5 * 4
-  } else { h = hue[nm]; sat = (role == "eco") ? 85 : 80; lit = 64 }
+  } else if (role == "eco") { h = hue[nm]; sat = 85; lit = 64 }
+  else { hm = hash(nm); h = hue[nm]; sat = 70 + int(hm / 3) % 4 * 5; lit = 58 + int(hm / 12) % 4 * 3 }
   dl = lit; while (dl < 90 && contrast(h, sat, dl, BGD) < 4.5) dl += 2
   ll = lit - 24; while (ll > 10 && contrast(h, sat, ll, BGL) < 4.5) ll -= 2
   light = hsl(h, sat, ll); dark = hsl(h, sat, dl); rgb = R * 65536 + G * 256 + B

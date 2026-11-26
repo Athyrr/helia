@@ -241,6 +241,8 @@ The hook resolves projects from the vaults declared in
 travels everywhere while a registry stays bound to one vault — and the two
 never live in the same repository. When a vault has a `.obsidian/` directory, the same hook also writes the three appearance files above, each only when its content changes; a failure there never fails the hook.
 
+`.obsidian/snippets/helia-couleurs.css` and `_global/sortspec.md` are generated: gitignore them in the vault. The hook replaces any existing `colorGroups` of `.obsidian/graph.json` with the generated ones, so commit that file along with the registry.
+
 **Helia writes nothing inside the project repositories** except the code
 changes themselves. No specs, no plan, no ledger, no scratch. `git status`
 in a project never shows a method artifact.
