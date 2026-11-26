@@ -633,7 +633,8 @@ function emit(nm, role, label,   h, sat, lit, hm, dl, ll, dark, light, rgb) {
   if (label != "") css = css ".tree-item:has(> .nav-folder-title[data-path=\"" nm "\"])::before { content: \"" label "\"; }\n"
   css = css rule("dark", nm, dark, role) rule("light", nm, light, role)
   if (role == "member") {
-    css = css ".nav-folder-title[data-path=\"" nm "\"] > .collapse-icon { margin-inline-start: 14px; }\n"
+    css = css ".nav-folder-title[data-path=\"" nm "\"] > .collapse-icon { margin-inline-start: -6px; }\n"
+    css = css ".nav-folder-title[data-path=\"" nm "\"] > .nav-folder-title-content { margin-inline-start: 14px; }\n"
     css = css ".tree-item:has(> .nav-folder-title[data-path=\"" nm "\"]) > .nav-folder-children { margin-inline-start: 14px; }\n"
   }
   sort = sort "  /folders " nm "\n"

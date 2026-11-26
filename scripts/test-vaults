@@ -1195,6 +1195,14 @@ is "css: section titles on the first folder of each group" \
 .tree-item:has(> .nav-folder-title[data-path="_global"])::before { content: "vault"; }' \
   "$(printf '%s\n' "$a_css" | grep '::before { content:')"
 
+# 2b. A member is indented by its own row (the explorer is virtualised and
+# members are root siblings; Obsidian sets an inline !important padding on every
+# row, so the title is not the lever): the label and the chevron both move 14px
+# right of an ecosystem's, the chevron staying visible.
+has "css: a member label is indented 14px" '.nav-folder-title[data-path="alpha-one"] > .nav-folder-title-content { margin-inline-start: 14px; }' "$a_css"
+has "css: a member chevron follows the label (default -20px + 14px)" '.nav-folder-title[data-path="alpha-one"] > .collapse-icon { margin-inline-start: -6px; }' "$a_css"
+hasnt "css: an ecosystem row is not indented" '.nav-folder-title[data-path="alpha-ecosystem"] > .nav-folder-title-content' "$a_css"
+
 # 3. A fiche without a folder adds nothing, a folder without a fiche gets nothing.
 hasnt "css: no rule for a fiche without folder" 'data-path="ghost"' "$a_css"
 hasnt "css: no rule for a folder without fiche" 'orphan-dir' "$a_css"
