@@ -34,10 +34,10 @@ Before drafting tasks, read two files, in this order, if they exist:
 project — is not in this cascade: a `SubagentStart` hook already injects it
 into every `helia:*` agent, the planner included. Do not read it again.
 
-Both are short (capped at 50 lines) — reading them in full costs little and
-saves a task from repeating a mistake already paid for once. When a task's
-dispatch (`helia:executing-plans`) would benefit from one specific line,
-inject that line alone as the task's one allowed constraint — never the
+Both are short (capped at 50 rules, no line over 200 characters) — reading
+them in full costs little and saves a task from repeating a mistake already
+paid for once. When a task's dispatch (`helia:executing-plans`) would benefit
+from one specific rule, inject that rule alone as the task's one allowed constraint — never the
 whole file, and never a heuristic that doesn't bear on the task at hand.
 
 ## Confirm the base — the orchestrator, before dispatching `helia:planner`

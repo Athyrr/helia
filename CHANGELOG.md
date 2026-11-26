@@ -3,6 +3,22 @@
 All notable changes to the Helia method (named aiKit up to 0.27.0). Versions follow the plugin manifests
 (`.claude-plugin/plugin.json`). Dates are the commit dates.
 
+## 0.33.0
+- **Readable heuristics.** A rule in `heuristics.md` is a short bold line,
+  then short sub-bullets (do, why, precisions, source) saying only what holds
+  today; past 8 rules a file groups them under `##` headings by theme. The
+  cap is 50 rules (lines starting with `- `) and no line over 200
+  characters, instead of 50 lines of `- <Condition> -> <Action>`. Updated in
+  `verifying-completion`, `diagnosing`, `using-helia`, `budgeting-context`,
+  `writing-plans`, `README.md` and `VOCABULARY.md`; what happens at the 51st
+  rule is unchanged.
+- **Session warning.** `hooks/session-start` warns, next to the
+  `consignes.md` size warning, about every first-level
+  `<folder>/heuristics.md` of a declared vault past 50 rules or carrying a
+  line over 200 characters (`heuristics_warnings`, `lib/vaults`; characters
+  counted under `LC_ALL=C`, UTF-8 continuation bytes excluded). Covered by
+  `scripts/test-vaults` (gate 9).
+
 ## 0.32.0
 - **Tests proportionnes.** Nouveau terme `test scope` dans `VOCABULARY.md` :
   `task` (les tests que la tache nomme, pendant le travail), `affected` (les

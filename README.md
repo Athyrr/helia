@@ -157,8 +157,10 @@ K-of-N escalation, no automatic model bump; an effort escalation, the only
 automatic one, never buys a third attempt. The orchestrator asks, states
 what it tried, and waits.
 
-**A trap earns a line only once it's real.** `heuristics.md` (per-project
-and machine-global, capped at 50 lines each) is read in cascade before
+**A trap earns a rule only once it's real.** `heuristics.md` (per-project
+and machine-global, capped at 50 rules each — a short bold line and short
+sub-bullets, grouped by theme, no line over 200 characters, warned at
+session start) is read in cascade before
 planning and written by the orchestrator alone, only at close, only for a
 trap this cycle actually hit — never a restatement of what was already
 known. An instruction your human partner gives is not a trap: it goes to the vault the moment it is given — `<project>/heuristics.md` for one project, `_global/consignes.md` for all of them — never only into the harness memory.

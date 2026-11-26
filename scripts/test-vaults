@@ -1065,6 +1065,75 @@ r6=$(printf '%s\n' "$a_ctx" | grep -F '6. A lasting instruction' | head -1)
 r6_len=$(consignes_bytes "$r6")
 [ "$r6_len" -le 450 ] && ok "regle 6 : <= 450 octets ($r6_len)" || ko "regle 6 : <= 450 octets" "<= 450" "$r6_len"
 
+echo
+echo "heuristics format: lib/vaults and session-start"
+HV="$TMP/heur vault"
+hfile() {  # hfile <folder> : creates <folder> in the vault, prints the path of its heuristics.md
+  mkdir -p "$HV/$1"; printf '%s' "$HV/$1/heuristics.md"
+}
+hrules() {  # hrules <n> : n rules in the new format, each with two short sub-bullets
+  local i
+  for i in $(seq 1 "$1"); do
+    printf -- '- **Règle %s.**\n  - Faire : écrire court.\n  - Source : piège, 2026-11-26.\n' "$i"
+  done
+}
+haccent() { printf '%*s' "$1" '' | sed 's/ /é/g'; }  # haccent <n> : n accented characters, 2n bytes
+{ printf '# p51 — heuristics\n\n## Thème\n\n'; hrules 51; } > "$(hfile p51)"
+{ printf '# p50 — heuristics\n\n'; hrules 50; printf '```bash\nLC_ALL=C awk 1\n```\n'; } > "$(hfile p50)"
+{ printf '# long — heuristics\n\n- **Règle.**\n  - '; haccent 197; printf '\n'; } > "$(hfile long)"
+{ printf '# bord — heuristics\n\n- **Règle.**\n  - '; haccent 196; printf '\n'; } > "$(hfile bord)"
+is "fixture: the long line is 201 characters" "201" "$(sed -n 4p "$HV/long/heuristics.md" | LC_ALL=C tr -d '\200-\277' | LC_ALL=C awk '{ print length($0) }')"
+is "fixture: the edge line is 200 characters, 196 of them accented" "200" "$(sed -n 4p "$HV/bord/heuristics.md" | LC_ALL=C tr -d '\200-\277' | LC_ALL=C awk '{ print length($0) }')"
+mkdir -p "$HV/_archive" "$HV/proj/_archive/vieux"
+{ printf '# archive — heuristics\n'; hrules 51; } > "$HV/_archive/heuristics.md"
+cp "$HV/_archive/heuristics.md" "$HV/proj/_archive/vieux/heuristics.md"
+mkdir -p "$HV/sans"
+h_out=$(heuristics_warnings hv "$HV"); h_rc=$?
+is "heuristics: never fails" "0" "$h_rc"
+has "51 rules: warned" '- `p51/heuristics.md` du vault `hv` : 51 règles (plafond 50) : à resserrer' "$h_out"
+has "201-character line: warned" '- `long/heuristics.md` du vault `hv` : 1 lignes de plus de 200 caractères : à couper' "$h_out"
+hasnt "50 rules, short lines and a code block: compliant" '`p50/' "$h_out"
+hasnt "200 accented characters exactly: compliant" '`bord/' "$h_out"
+hasnt "_archive/ ignored, at the root and inside a project" '_archive' "$h_out"
+hasnt "folder without heuristics.md: nothing" '`sans/' "$h_out"
+is "absent vault: nothing, status 0" "0:" "$(heuristics_warnings hv "$TMP/no-such-vault"; printf '%s:' "$?")"
+mkdir -p "$HV/ferme"; hrules 51 > "$HV/ferme/heuristics.md"; chmod 000 "$HV/ferme/heuristics.md"
+if [ -r "$HV/ferme/heuristics.md" ]; then
+  echo "  (chmod 000 leaves the file readable here: case skipped)"
+else
+  hasnt "unreadable file: nothing" '`ferme/' "$(heuristics_warnings hv "$HV")"
+fi
+chmod 644 "$HV/ferme/heuristics.md"; rm -f "$HV/ferme/heuristics.md"
+mkdir -p "$HV/projects"
+printf -- '---\nname: fiche-hv\nkind: conception\nsummary: fiche de test\n---\n' > "$HV/projects/fiche-hv.md"
+printf 'vault hv %s\n' "$HV" > "$TMP/c-heur"
+h_hook=$(HELIA_VAULTS="$TMP/c-heur" bash hooks/session-start)
+printf '%s' "$h_hook" | json_valid && ok "session-start with heuristics warnings: valid JSON" || ko "session-start with heuristics warnings: valid JSON" "JSON" "invalid"
+h_ctx=$(printf "%s" "$h_hook" | json_ctx)
+has "session-start: heuristics heading" "## Heuristiques hors format" "$h_ctx"
+has "session-start: heuristics line" '- `p51/heuristics.md` du vault `hv` : 51 règles (plafond 50) : à resserrer' "$h_ctx"
+
+
+# Cap of the warning block: 10 lines then a summary line, never more.
+CAPV="$TMP/cap vault"; mkdir -p "$CAPV/projects"
+printf -- '---\nname: fiche-cap\nkind: conception\nsummary: fiche de test\n---\n' > "$CAPV/projects/fiche-cap.md"
+printf 'vault capv %s\n' "$CAPV" > "$TMP/c-cap"
+cap_make() {  # cap_make <n> : n out-of-format heuristics files
+  rm -rf "$CAPV"/f-*; local i
+  for i in $(seq 1 "$1"); do mkdir -p "$CAPV/f-$i"; { printf '# f — heuristics\n\n## T\n\n'; hrules 51; } > "$CAPV/f-$i/heuristics.md"; done
+}
+cap_ctx() { HELIA_VAULTS="$TMP/c-cap" bash hooks/session-start | json_ctx; }
+cap_make 11; cap_c=$(cap_ctx)
+is "cap: 11 files give exactly 10 warning lines" "10" "$(printf '%s\n' "$cap_c" | grep -c '^- `f-.*règles (plafond')"
+has "cap: 11 files give the summary line for 1 more" "- … et 1 autres alertes d'heuristiques" "$cap_c"
+cap_make 10; cap_c=$(cap_ctx)
+is "cap: 10 files give 10 warning lines" "10" "$(printf '%s\n' "$cap_c" | grep -c '^- `f-.*règles (plafond')"
+hasnt "cap: 10 files give no summary line" "autres alertes d'heuristiques" "$cap_c"
+cap_make 30; cap_c=$(cap_ctx)
+cap_len=$(printf '%s' "$cap_c" | LC_ALL=C.UTF-8 wc -m | tr -d ' ')
+[ "$cap_len" -lt 10000 ] && ok "cap: 30 out-of-format files keep the context under 10000 characters ($cap_len)" || ko "cap: 30 out-of-format files keep the context under 10000 characters" "<10000" "$cap_len"
+has "cap: 30 files give the summary line for 20 more" "- … et 20 autres alertes d'heuristiques" "$cap_c"
+
 echo "$pass passes, $fail echecs"
 # `exit`, jamais un simple `[ "$fail" = 0 ]` en derniere ligne : le statut
 # d'un script sans `set -e` est celui de sa DERNIERE commande, donc toute

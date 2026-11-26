@@ -67,7 +67,7 @@ a project's own MCP servers, `helia:receiving-code-review` when incorporating
 feedback from outside the method's own review loop. `helia:writing-notes` only when the human partner explicitly asks to
 set an idea aside, `helia:capturing-reference` only when they explicitly ask to keep a document as a reference.
 
-**Heuristics** — two vault files, both capped at 50 lines, read in cascade
+**Heuristics** — two vault files, both capped at 50 rules (a short bold line and short sub-bullets each, no line over 200 characters, warned at session start), read in cascade
 (`_global/` then `<project>/`) while writing the plan:
 `vault/_global/heuristics.md` (technical traps that do not depend on the
 project: machine, OS, shell, or a cross-project pattern) and

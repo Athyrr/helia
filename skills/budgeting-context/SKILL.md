@@ -32,7 +32,7 @@ it by pre-loading "just in case".**
 | 1 Understand | orchestrator | the project's registry file (~500) | code, project docs |
 | 2 Specify | orchestrator + `helia:explorer` | explorer reads code and docs against one closed question, returns a 30-50 line factual synthesis, no raw code | orchestrator reads nothing itself beyond a light check (`ls`, `git log`) |
 | 3 Assess | the project's domain expert | its own prompt + the docs of its area | orchestrator receives the `## Impact` section appended to `spec.md`, nothing else |
-| 4 Plan | `helia:planner` | spec (with its Impact section), the doc **slices** the registry routes to, `_global/heuristics.md` and `<project>/heuristics.md` (both capped at 50 lines); `_global/consignes.md` arrives injected at start | the whole doc; the orchestrator does not re-read |
+| 4 Plan | `helia:planner` | spec (with its Impact section), the doc **slices** the registry routes to, `_global/heuristics.md` and `<project>/heuristics.md` (both capped at 50 rules); `_global/consignes.md` arrives injected at start | the whole doc; the orchestrator does not re-read |
 | 5 Execute | one `helia:implementer` per task (none for a `[humain]` task) | Task N's section in `vault/<project>/<feature>/plan.md`, and only that section | the rest of the plan, other tasks, session history |
 | 5b Review | `helia:reviewer` | the diff and Task N's section it must satisfy | the conversation |
 | 6 Verify | `helia:verifier` | the registry's command and its output | anything else |

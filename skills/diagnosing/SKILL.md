@@ -322,9 +322,9 @@ If you catch yourself thinking:
 
 Once the fix is verified (Phase 4 done). A fix made outside a feature cycle never reaches phase 6 of `helia:verifying-completion`, so this is its only chance to leave a trace.
 
-Was the root cause a trap nothing already written down would have told you, and did it cost real time to find? If yes, append ONE bullet `- <Condition> -> <Action or thing to avoid>` to `vault/<project>/heuristics.md`. If the cause does not depend on the project (machine, OS, shell, or a pattern like one connection per request overloading a shared target), use `vault/_global/heuristics.md` instead. If no, write nothing.
+Was the root cause a trap nothing already written down would have told you, and did it cost real time to find? If yes, add ONE rule to `vault/<project>/heuristics.md`, in the format of `helia:verifying-completion` "Writing to `heuristics.md`" (a short bold line, then short sub-bullets: do, why, precisions, source, their labels written in the vault's language). If the cause does not depend on the project (machine, OS, shell, or a pattern like one connection per request overloading a shared target), use `vault/_global/heuristics.md` instead. If no, write nothing.
 
-Same rules as `helia:verifying-completion` "Writing to `heuristics.md`": 50-line cap (replace the oldest rule rather than exceed), append below the header, never recreate the file.
+Same rules as `helia:verifying-completion` "Writing to `heuristics.md`": 50-rule cap and no line over 200 characters (replace the oldest rule rather than exceed), add the rule under the theme it belongs to, never recreate the file.
 
 This is for **traps**. An instruction your human partner gives is not a trap:
 it is written the moment it is given, at any phase — see `helia:using-helia`,
