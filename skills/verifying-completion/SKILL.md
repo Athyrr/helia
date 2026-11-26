@@ -87,7 +87,7 @@ human partner has verified — or waived, in writing:
    `status: done`, or `status: abandonne` for a dropped need, and today's
    `updated:`.
 2. **What survives.** Ask what this need teaches the next one:
-   - a lesson: append it to the project's `heuristics.md` (50-line cap — merge
+   - a lesson: append it to the project's `heuristics.md` (50-rule cap — merge
      or drop an older rule to make room);
    - or write `nothing to keep` in the verdict. Then the need's `traces/`
      is not kept: delete it, git holds it.
@@ -127,32 +127,47 @@ instruction left there is invisible to agents and to every other machine.
 
 The memory keeps personal tastes and pointers to the vault, nothing else.
 
-## Writing to `heuristics.md` — orchestrator only, at close, one bullet
+## Writing to `heuristics.md` — orchestrator only, at close, one rule
 
 `vault/<project>/heuristics.md` is a living, append-only record of empirical
-rules and traps for this project, capped at 50 lines. Two rules govern it:
+rules and traps for this project, capped at 50 rules. Two rules govern it:
 
-It exists from registration, header only (`helia:registering-a-project`): append below the header, never recreate the file.
+It exists from registration, header only (`helia:registering-a-project`): add each rule under the `##` theme it belongs to (straight below the header while the file holds 8 rules or fewer), never recreate the file.
 
 - **Only the orchestrator writes to it, and only here, at phase 6.** A
   subagent never writes to it — heuristics earn their place by surviving to
   the end of a cycle, not by seeming true mid-task.
-- **Write one bullet, and only if this cycle hit an unexpected trap** — a
+- **Write one rule, and only if this cycle hit an unexpected trap** — a
   fact about this project nothing already written down would have told you,
   that cost real time to discover. A clean run that hit no surprises adds
   nothing; padding the file with things everyone already knew is how a
-  50-line cap stops meaning anything.
+  50-rule cap stops meaning anything.
 - **These rules are for traps.** An instruction your human partner gives is
   written the moment it is given, at any phase (`helia:using-helia`,
   "Where an instruction lives").
 
-Format, one line:
+Format — a short bold line that states the rule, then short sub-bullets, in
+this order, only those with content, in the vault's language:
 
 ```markdown
-- <Condition> -> <Action or thing to avoid>
+- **<The rule, in one short sentence.>**
+  - Do: <what to do or avoid>.
+  - Why: <the reason>.
+  - <One precision per sub-bullet, as many as needed.>
+  - Source: <human or trap>, <date>, <issue or need if known>; amended on <date> (<need>).
 ```
 
-If the file is at or near 50 lines, the new bullet earns its place only by
+- A rule says only what holds today: an amendment is merged into the rule
+  and its sub-bullets, never appended as history. No verbatim quote: git
+  keeps the old text. Identifiers, paths and commands stay as they are, in
+  backticks.
+- Past 8 rules, the file groups them under `##` headings by theme, chosen
+  for that file, each rule under one theme; 8 or fewer stay a plain list.
+- A rule is a line starting with `- ` in column 1: at most 50 per file. No
+  line — headings, sub-bullets and code blocks included — over 200
+  characters. The session hook warns about a file past either limit.
+
+If the file is at or near 50 rules, the new rule earns its place only by
 being more load-bearing than the oldest one — replace, don't just append.
 
 A trap that does not depend on the project (machine, OS, shell, or a
